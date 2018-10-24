@@ -1,4 +1,4 @@
-class SlackHandlerUtil
+class TelegramHandlerUtil
   def initialize(default_config, run_status)
     @default_config = default_config
     @run_status = run_status

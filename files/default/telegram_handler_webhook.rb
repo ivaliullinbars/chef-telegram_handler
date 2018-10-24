@@ -20,19 +20,19 @@ require "chef"
 require "chef/handler"
 require 'net/http'
 require "timeout"
-require_relative 'slack_handler_util'
+require_relative 'telegram_handler_util'
 
-class Chef::Handler::Slack < Chef::Handler
-  attr_reader :webhooks, :username, :config, :timeout, :icon_emoji, :fail_only, :message_detail_level, :cookbook_detail_level
+class Chef::Handler::Telegram < Chef::Handler
+  attr_reader :api_url, :api_domain, :api_token, :chats, :config, :timeout, :fail_only, :message_detail_level, :cookbook_detail_level
 
   def initialize(config = {})
-    Chef::Log.debug('Initializing Chef::Handler::Slack')
+    Chef::Log.debug('Initializing Chef::Handler::Telegram')
     @config = config
     @timeout = @config[:timeout]
-    @icon_emoji = @config[:icon_emoji]
-    @icon_url = @config[:icon_url]
-    @username = @config[:username]
-    @webhooks = @config[:webhooks]
+    @api_url = @config[:api_url]
+    @api_domain = @config[:api_domain]
+    @api_token = @config[:api_token]
+    @chats = @config[:chats]
     @fail_only = @config[:fail_only]
     @message_detail_level = @config[:message_detail_level]
     @cookbook_detail_level = @config[:cookbook_detail_level]
@@ -40,73 +40,69 @@ class Chef::Handler::Slack < Chef::Handler
 
   def setup_run_status(run_status)
     @run_status = run_status
-    @util = SlackHandlerUtil.new(@config, @run_status)
+    @util = TelegramHandlerUtil.new(@config, @run_status)
   end
 
   def report
     setup_run_status(run_status)
 
-    @webhooks['name'].each do |val|
-      Chef::Log.debug("Sending handler report to webhook #{val}")
-      webhook = node['chef_client']['handler']['slack']['webhooks'][val]
+    @chats.each do |chat|
+      Chef::Log.debug("Sending handler report to Telegram chat #{chat}")
       Timeout.timeout(@timeout) do
-        sending_to_slack = if @run_status.is_a?(Chef::RunStatus)
-                             report_chef_run_end(webhook)
+        sending_to_telegram = if @run_status.is_a?(Chef::RunStatus)
+                             report_chef_run_end(chat)
                            else
-                             report_chef_run_start(webhook)
+                             report_chef_run_start(chat)
                            end
-        Chef::Log.info("Sending report to Slack webhook #{webhook['url']}") if sending_to_slack
+        Chef::Log.info("Sending report to Telegram chat #{chat[:id]}") if sending_to_telegram
       end
     end
   rescue Exception => e
-    Chef::Log.warn("Failed to send message to Slack: #{e.message}")
+    Chef::Log.warn("Failed to send message to Telegram: #{e.message}")
   end
 
   private
 
-  def report_chef_run_start(webhook)
-    return false unless @util.send_on_start(webhook)
-    slack_message(" :gear: #{@util.start_message(webhook)}", webhook['url'], webhook['channel'])
+  def report_chef_run_start(chat)
+    return false unless @util.send_on_start(chat)
+    # telegram_message(" :gear: #{@util.start_message(chat)}", chat[:id])
+    telegram_message(" \xE2\x9A\x99 #{@util.start_message(chat)}", chat[:id])
   end
 
-  def report_chef_run_end(webhook)
+  def report_chef_run_end(chat)
     if @run_status.success?
-      return false if @util.fail_only(webhook)
-      slack_message(" :white_check_mark: #{@util.end_message(webhook)}", webhook['url'], webhook['channel'])
+      return false if @util.fail_only(chat)
+      # telegram_message(" :white_check_mark: #{@util.end_message(chat)}", chat[:id])
+      telegram_message(" \xE2\x9C\x85 #{@util.end_message(chat)}", chat[:id])
     else
-      slack_message(" :skull: #{@util.end_message(webhook)}", webhook['url'], webhook['channel'], run_status.exception)
+      telegram_message(" \xF0\x9F\x92\x80 #{@util.end_message(chat)}", chat[:id], run_status.exception)
     end
   end
 
-  def slack_message(message, webhook, channel, text_attachment = nil)
-    Chef::Log.debug("Sending slack message #{message} to webhook #{webhook} #{text_attachment ? 'with' : 'without'} a text attachment")
-    uri = URI.parse(webhook)
+  def telegram_message(message, chat_id, text_attachment = nil)
+    Chef::Log.debug("Sending telegram message #{message} to chat #{chat_id} #{text_attachment ? 'with' : 'without'} a text attachment")
+    # telegram api request uri
+    uri = URI.parse("#{@api_url}/bot#{@api_token}/sendMessage")
     http = Net::HTTP.new(uri.host, uri.port)
     http.use_ssl = true
     http.verify_mode = OpenSSL::SSL::VERIFY_NONE
-    req = Net::HTTP::Post.new(uri.path, 'Content-Type' => 'application/json')
-    req.body = request_body(message, channel, text_attachment)
+    req = Net::HTTP::Post.new(uri.path, 'Content-Type' => 'application/json', 'Host' => "#{@api_domain}")
+    req.body = request_body(chat_id, message, text_attachment)
     Chef::Log.debug Chef::JSONCompat.to_json_pretty(req.body)
     res = http.request(req)
     # responses can be:
     # "Bad token"
     # "invalid_payload"
     # "ok"
-    raise res.body unless res.body == 'ok'
+    raise res.body unless JSON.parse(res.body)['ok']
   end
 
-  def request_body(message, channel, text_attachment)
+  def request_body(chat_id, message, text_attachment)
     body = {}
-    body[:username] = @username unless @username.nil?
+    body[:chat_id] = chat_id
     body[:text] = message
-    # icon_url takes precedence over icon_emoji
-    if @icon_url
-      body[:icon_url] = @icon_url
-    elsif @icon_emoji
-      body[:icon_emoji] = @icon_emoji
-    end
-    body[:channel] = channel if channel
-    body[:attachments] = [{ text: text_attachment.to_s }] unless text_attachment.nil?
+    # body[:parse_mode] = 'Markdown'
+    # body[:attachments] = [{ text: text_attachment.to_s }] unless text_attachment.nil?
     body.to_json
   end
 end
