@@ -16,36 +16,19 @@
 
 # Attributes for Slack intergration Using slackr gem. Requires API key
 ## required attributes
-default['chef_client']['handler']['slack']['team']       = nil
-default['chef_client']['handler']['slack']['api_key']    = nil
-## Optional attributes
-default['chef_client']['handler']['slack']['channel']    = nil
-
-# Attributes for Slack intergration using webhook. No API key required.
-# Multiple webhooks supported. Report detail and fail_only set per webhook.
-default_unless['chef_client']['handler']['slack']['webhooks']['name'] = []
-# use like this
-# default['chef_client']['handler']['slack']['webhooks']['name'].push('webhook1')
-# default['chef_client']['handler']['slack']['webhooks']['webhook1']['url'] = nil
-# default['chef_client']['handler']['slack']['webhooks']['webhook1']['fail_only'] = nil
-# default['chef_client']['handler']['slack']['webhooks']['webhook1']['send_start_message'] = nil
-# default['chef_client']['handler']['slack']['webhooks']['webhook1']['message_detail_level'] = nil
-# default['chef_client']['handler']['slack']['webhooks']['webhook1']['cookbook_detail_level'] = nil
-# default['chef_client']['handler']['slack']['webhooks']['webhook1']['send_environment'] = nil
-
+default['chef_client']['handler']['telegram']['api_url'] = 'https://api.telegram.org'
+default['chef_client']['handler']['telegram']['api_domain'] = 'api.telegram.org'
+default['chef_client']['handler']['telegram']['api_token'] = nil
+default['chef_client']['handler']['telegram']['chats'] = []
 # shared attributes
-default['chef_client']['handler']['slack']['timeout']    = 15
-default['chef_client']['handler']['slack']['username']   = nil
-default['chef_client']['handler']['slack']['icon_url']   = nil
-# OR
-default['chef_client']['handler']['slack']['icon_emoji'] = nil
+default['chef_client']['handler']['telegram']['timeout']    = 15
 # Valid options here are basic, elapsed, resources
-default['chef_client']['handler']['slack']['message_detail_level'] = 'basic'
+default['chef_client']['handler']['telegram']['message_detail_level'] = 'basic'
 # Valid options here are off, all
-default['chef_client']['handler']['slack']['cookbook_detail_level'] = 'off'
+default['chef_client']['handler']['telegram']['cookbook_detail_level'] = 'off'
 # Only report failures
-default['chef_client']['handler']['slack']['fail_only'] = false
+default['chef_client']['handler']['telegram']['fail_only'] = false
 # Whether to send a message to when the Chef run starts
-default['chef_client']['handler']['slack']['send_start_message'] = false
+default['chef_client']['handler']['telegram']['send_start_message'] = false
 # Whether to send a message the node.chef_environment as well as the node.name
-default['chef_client']['handler']['slack']['send_environment'] = false
+default['chef_client']['handler']['telegram']['send_environment'] = false

@@ -20,41 +20,33 @@
 # See also: https://github.com/rackspace-cookbooks/chef-slack_handler/issues/48
 # Inspired by https://github.com/DataDog/chef-datadog/pull/231/files
 if Chef::Config[:why_run]
-  Chef::Log.warn('Running in why-run mode, skipping slack_handler')
+  Chef::Log.warn('Running in why-run mode, skipping telegram_handler')
   return
 end
 
 # if webhook attribute set, use webhook handler, otherwise use slackr gem handler
-if node['chef_client']['handler']['slack']['webhooks']['name'].empty?
-  # use slackr to post message. slackr gem and apikey required
-  chef_gem 'slackr' do
-    compile_time false if respond_to?(:compile_time)
-  end
-  handler_file = "#{Chef::Config[:file_cache_path]}/slack_handler.rb"
-  handler_source = "slack_handler.rb"
-else
-  handler_file = "#{Chef::Config[:file_cache_path]}/slack_handler_webhook.rb"
-  handler_source = "slack_handler_webhook.rb"
+if node['chef_client']['handler']['telegram']['chats'].empty?
+  Chef::Log.fatal('Chat ids array empty!')
 end
 
-cookbook_file "#{Chef::Config[:file_cache_path]}/slack_handler_util.rb" do
-  source 'slack_handler_util.rb'
+cookbook_file "#{node['chef_handler']['handler_path']}/telegram_handler_util.rb" do
+  source 'telegram_handler_util.rb'
   mode "0600"
   action :nothing
   # end
 end.run_action(:create)
 
-cookbook_file handler_file do
-  source handler_source
+cookbook_file "#{node['chef_handler']['handler_path']}/telegram_handler_webhook.rb" do
+  source 'telegram_handler_webhook.rb'
   mode "0600"
   action :nothing
   # end
 end.run_action(:create)
 
-chef_handler "Chef::Handler::Slack" do
-  source handler_file
+chef_handler "Chef::Handler::Telegram" do
+  source "#{node['chef_handler']['handler_path']}/telegram_handler_webhook.rb"
   arguments [
-    node['chef_client']['handler']['slack']
+    node['chef_client']['handler']['telegram']
   ]
   supports start: true, report: true, exception: true
   action :nothing
