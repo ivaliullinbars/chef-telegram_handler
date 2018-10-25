@@ -64,9 +64,9 @@ class TelegramHandlerUtil
     elapsed_time = @run_status.elapsed_time.round
     case context['message_detail_level'] || @default_config[:message_detail_level]
     when "elapsed"
-      ". #{updated_resources.count} resources updated in #{elapsed_time} seconds." unless updated_resources.nil?
+      ".\n#{updated_resources.count} resources updated in #{elapsed_time} seconds." unless updated_resources.nil?
     when "resources"
-      ". #{updated_resources.count} resources updated in #{elapsed_time} seconds:\n#{updated_resources.join(', ')}" unless updated_resources.nil?
+      ".\n#{updated_resources.count} resources updated in #{elapsed_time} seconds:\n#{updated_resources.join(', ')}" unless updated_resources.nil?
     end
   end
 end
