@@ -32,3 +32,5 @@ default['chef_client']['handler']['telegram']['fail_only'] = false
 default['chef_client']['handler']['telegram']['send_start_message'] = false
 # Whether to send a message the node.chef_environment as well as the node.name
 default['chef_client']['handler']['telegram']['send_environment'] = false
+#
+default['chef_handler']['handler_path'] = "#{File.expand_path(File.join(Chef::Config[:file_cache_path], '..'))}/handlers"

@@ -25,23 +25,29 @@ if Chef::Config[:why_run]
 end
 
 # if webhook attribute set, use webhook handler, otherwise use slackr gem handler
-if node['chef_client']['handler']['telegram']['chats'].empty?
-  Chef::Log.fatal('Chat ids array empty!')
-end
+# if node['chef_client']['handler']['telegram']['chats'].empty?
+#   Chef::Log.fatal('Chat ids array empty!')
+# end
+
+directory node['chef_handler']['handler_path']
 
 cookbook_file "#{node['chef_handler']['handler_path']}/telegram_handler_util.rb" do
   source 'telegram_handler_util.rb'
   mode "0600"
-  action :nothing
+  # action :nothing
+  action :create
   # end
-end.run_action(:create)
+# end.run_action(:create)
+end
 
 cookbook_file "#{node['chef_handler']['handler_path']}/telegram_handler_webhook.rb" do
   source 'telegram_handler_webhook.rb'
   mode "0600"
-  action :nothing
+  # action :nothing
+  action :create
   # end
-end.run_action(:create)
+# end.run_action(:create)
+end
 
 chef_handler "Chef::Handler::Telegram" do
   source "#{node['chef_handler']['handler_path']}/telegram_handler_webhook.rb"
@@ -49,8 +55,10 @@ chef_handler "Chef::Handler::Telegram" do
     node['chef_client']['handler']['telegram']
   ]
   supports start: true, report: true, exception: true
-  action :nothing
-end.run_action(:enable)
+  # action :nothing
+  action :enable
+# end.run_action(:enable)
+end
 
 # Based on https://github.com/onddo/chef-handler-zookeeper
 ruby_block 'trigger_start_handlers' do
@@ -59,5 +67,7 @@ ruby_block 'trigger_start_handlers' do
     require 'chef/handler'
     Chef::Handler.run_start_handlers(self)
   end
-  action :nothing
-end.run_action(:create)
+  # action :nothing
+  action :create
+# end.run_action(:create)
+end

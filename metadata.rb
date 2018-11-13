@@ -15,8 +15,6 @@ supports 'redhat'
 supports 'debian'
 supports 'windows'
 
-depends 'chef_handler', '~> 2.1.2'
-
 source_url 'https://github.com/rackspace-cookbooks/chef-slack_handler' if respond_to?(:source_url)
 issues_url 'https://github.com/rackspace-cookbooks/chef-slack_handler/issues' if respond_to?(:issues_url)
 chef_version '>= 14.0' if respond_to?(:chef_version)
