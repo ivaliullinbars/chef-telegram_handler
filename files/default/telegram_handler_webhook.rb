@@ -29,8 +29,12 @@ class Chef::Handler::Telegram < Chef::Handler
     Chef::Log.debug('Initializing Chef::Handler::Telegram')
     @config = config
     @timeout = @config[:timeout]
-    @api_url = @config[:api_url]
-    @api_domain = @config[:api_domain]
+    if @config[:api_url] and @config[:api_domain]
+      @api_url = @config[:api_url]
+      @api_domain = @config[:api_domain]
+    else
+      @api_url = 'https://api.telegram.org'
+    end
     @api_token = @config[:api_token]
     @chats = @config[:chats]
     @fail_only = @config[:fail_only]
@@ -86,7 +90,11 @@ class Chef::Handler::Telegram < Chef::Handler
     http = Net::HTTP.new(uri.host, uri.port)
     http.use_ssl = true
     http.verify_mode = OpenSSL::SSL::VERIFY_NONE
-    req = Net::HTTP::Post.new(uri.path, 'Content-Type' => 'application/json', 'Host' => "#{@api_domain}")
+    if defined? @api_domain
+      req = Net::HTTP::Post.new(uri.path, 'Content-Type' => 'application/json', 'Host' => "#{@api_domain}")
+    else
+      req = Net::HTTP::Post.new(uri.path, 'Content-Type' => 'application/json')
+    end
     req.body = request_body(chat_id, message, text_attachment)
     Chef::Log.debug Chef::JSONCompat.to_json_pretty(req.body)
     res = http.request(req)
